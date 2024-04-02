@@ -13,37 +13,45 @@ window.onload = function(){
         .attr("height", height);
 
     //create Albers equal area conic projection centered on France
-    var projection = d3.geoAzimuthalEquidistant()
-        .center([0, 44.8])
+    var projection = d3.geoAlbers()
+        .center([0, 46.2])
         .rotate([-2, 0, 0])
-        .parallels([44, 45.5])
+        .parallels([43, 62])
         .scale(2500)
         .translate([width / 2, height / 2]);
-
+        
     var path = d3.geoPath()
         .projection(projection);
-        
+
     //use Promise.all to parallelize asynchronous data loading
     var promises = [];    
-    promises.push(d3.csv("data/agriculture_by_WIcounty.csv")); //load attributes from csv    
-    promises.push(d3.json("data/agriculture_by_WIcounty.topojson")); //load background spatial data    
+    promises.push(d3.csv("data/week9/unitsData.csv")); //load attributes from csv    
+    promises.push(d3.json("data/week9/EuropeCountries.topojson")); //load background spatial data    
+    promises.push(d3.json("data/week9/FranceRegions.topojson")); //load choropleth spatial data    
     Promise.all(promises).then(callback);
 
     function callback(data){               
         csvData = data[0];    
-        wisc = data[1];    
+        europe = data[1];    
+        france = data[2];
         
         //translate europe TopoJSON
-        var wisconsin = topojson.feature(wisc, wisc.objects.agriculture_by_WIcounty)
+        var europeCountries = topojson.feature(europe, europe.objects.EuropeCountries),
+            franceRegions = topojson.feature(france, france.objects.FranceRegions).features;
 
+        //add Europe countries to map
+        var countries = map.append("path")
+            .datum(europeCountries)
+            .attr("class", "countries")
+            .attr("d", path);
 
         //add France regions to map
-        var counties = map.selectAll(".counties")
-            .data(agriculture_by_WIcounty)
+        var regions = map.selectAll(".regions")
+            .data(franceRegions)
             .enter()
             .append("path")
             .attr("class", function(d){
-                return "counties " + d.properties.adm1_code;
+                return "regions " + d.properties.adm1_code;
             })
             .attr("d", path);
     };
