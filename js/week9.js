@@ -1,6 +1,7 @@
-//begin script when window loads
-window.onload = function(){
+window.onload = setMap();
 
+//set up choropleth map
+function setMap(){
     //map frame dimensions
     var width = 960,
         height = 460;
