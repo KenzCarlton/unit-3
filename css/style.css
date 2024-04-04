@@ -17,3 +17,14 @@
     font-size: 1.5em;
     font-weight: bold;
 }
+
+.counties {
+    fill: #FFF;
+    stroke: #CCC;
+    stroke-width: 2px;
+}
+.state {
+    fill: #cdcdcd;
+    stroke: #565555;
+    stroke-width: 2px;
+}

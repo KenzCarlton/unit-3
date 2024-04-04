@@ -4,8 +4,8 @@ window.onload = setMap();
 function setMap(){
 
     //map frame dimensions
-    var width = 960,
-        height = 460;
+    var width = 900,
+        height = 600;
 
     //create new svg container for the map
     var map = d3.select("body")
@@ -16,14 +16,14 @@ function setMap(){
 
     //create Albers equal area conic projection centered on France
     var projection = d3.geoAzimuthalEquidistant()
-        .center([0, 43])
-        .rotate([88, 0, 0])
-        .scale(2500)
+        .center([0, 44.7])
+        .rotate([89.7, 0, 0])
+        .scale(6500)
         .translate([width / 2, height / 2]);
 
     var path = d3.geoPath()
         .projection(projection);
-        
+
     //use Promise.all to parallelize asynchronous data loading
     var promises = [];    
     promises.push(d3.csv("data/agriculture_percents.csv")); //load attributes from csv    
@@ -35,7 +35,7 @@ function setMap(){
         csvData = data[0];    
         states = data[1];
         wisc = data[2];    
-        
+
         //translate wisconsin TopoJSON
         var surrounding = topojson.feature(states, states.objects.surr_states_p),
             wisconsin = topojson.feature(wisc, wisc.objects.agriculture_by_WIcounty).features;
