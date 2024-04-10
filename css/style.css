@@ -28,3 +28,21 @@
     stroke: #565555;
     stroke-width: 2px;
 }
+
+.map {
+    border: medium solid #999;
+    margin: 10px 0 0 20px;
+}
+
+.chart_1 {
+    background-color: rgba(128,128,128,.2);
+    border: medium solid #999;
+    float: right;
+    margin: 10px 20px 0 0;
+}
+
+.chart_2 {
+    background-color: rgba(128,128,128,.2);
+    border: medium solid #999;
+    margin: 10px 20px 0 0;
+}
