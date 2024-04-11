@@ -11,8 +11,9 @@
 function setMap(){
 
     //map frame dimensions
-    var width = window.innerWidth * 0.375,
+    var width = window.innerWidth * 0.3875,
         height = width;
+    console.log(width);
 
     //create new svg container for the map
     var map = d3.select("body")
@@ -25,7 +26,7 @@ function setMap(){
     var projection = d3.geoAzimuthalEquidistant()
         .center([0, 44.7])
         .rotate([89.9, 0, 0])
-        .scale(6500)
+        .scale(width * 11.3)
         .translate([width / 2, height / 2]);
 
     var path = d3.geoPath()
@@ -183,12 +184,17 @@ function setChart(csvData, colorScale, colorScale2){
         .attr("height", chartHeight)
         .attr("id", "chart_2");
 
-    const box = document.getElementById('chart_2');
-    var top = window.innerHeight * .5
+    const box1 = document.getElementById('chart_1');
+    const box2 = document.getElementById('chart_2');
+    var top1 = 0
+    var top2 = window.innerHeight * .5
     var left = window.innerWidth * .425
-    box.style.position = 'absolute';
-    box.style.top = top;
-    box.style.left = left;
+    box1.style.position = 'absolute';
+    box2.style.position = 'absolute';
+    box1.style.top = top1;
+    box2.style.top = top2;
+    box1.style.left = left;
+    box2.style.left = left;
 
 };
 
