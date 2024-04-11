@@ -61,8 +61,8 @@ function setMap(){
         setEnumerationUnits(wisconsin, map, path, colorScale);
 
         //add coordinated visualization to the map
-        setChart(csvData, colorScale, "1");
-        setChart(csvData, colorScale2, "2");
+        setChart(csvData, colorScale, colorScale2);
+    //    setChart(csvData, colorScale2, "2");
 
     };
 }; //end of setMap()
@@ -164,17 +164,32 @@ function makeColorScale2(data){
 };
 
 //function to create coordinated bar chart
-function setChart(csvData, colorScale, n){
+function setChart(csvData, colorScale, colorScale2){
     //chart frame dimensions
     var chartWidth = window.innerWidth * 0.555,
         chartHeight = window.innerHeight * .45;
 
     //create a second svg element to hold the bar chart
-    var chart = d3.select("body")
+    var chart1 = d3.select("body")
         .append("svg")
         .attr("width", chartWidth)
         .attr("height", chartHeight)
-        .attr("class", `chart_${n}`);
+        .attr("id", "chart_1");
+    
+    //create a second svg element to hold the bar chart
+    var chart2 = d3.select("body")
+        .append("svg")
+        .attr("width", chartWidth)
+        .attr("height", chartHeight)
+        .attr("id", "chart_2");
+
+    const box = document.getElementById('chart_2');
+    var top = window.innerHeight * .5
+    var left = window.innerWidth * .425
+    box.style.position = 'absolute';
+    box.style.top = top;
+    box.style.left = left;
+
 };
 
 })();
