@@ -1,8 +1,8 @@
 (function(){
 
     //pseudo-global variables
-    var attrArray = ["per_alfalf", "per_corn", "per_otherH", "per_peas", "per_potato", "per_soybea", "per_swtCor", "per_WWheat"];
-    var expressed = attrArray[0]; //initial attribute
+    var attrArray = ["alfalfa", "corn", "other hay", "peas", "potatoes", "soybeans", "sweet corn", "winter wheat"];
+    var expressed = attrArray[1]; //initial attribute
 
     //begin script when window loads
     window.onload = setMap();
@@ -13,7 +13,6 @@ function setMap(){
     //map frame dimensions
     var width = window.innerWidth * 0.3875,
         height = width;
-    console.log(width);
 
     //create new svg container for the map
     var map = d3.select("body")
@@ -168,7 +167,15 @@ function makeColorScale2(data){
 function setChart(csvData, colorScale, colorScale2){
     //chart frame dimensions
     var chartWidth = window.innerWidth * 0.555,
-        chartHeight = window.innerHeight * .45;
+        chartHeight = window.innerHeight * .4,
+        leftPadding = 25,
+        rightPadding = 2,
+        topBottomPadding = 5,
+        chartInnerWidth = chartWidth - leftPadding - rightPadding,
+        chartInnerHeight = chartHeight - topBottomPadding * 2,
+        translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
+    console.log(chartWidth);
+
 
     //create a second svg element to hold the bar chart
     var chart1 = d3.select("body")
@@ -196,6 +203,68 @@ function setChart(csvData, colorScale, colorScale2){
     box1.style.left = left;
     box2.style.left = left;
 
+    //create a rectangle for chart background fill
+    var chartBackground = chart1.append("rect")
+        .attr("class", "chartBackground")
+        .attr("width", chartInnerWidth)
+        .attr("height", chartInnerHeight)
+        .attr("transform", translate);
+
+    //create a scale to size bars proportionally to frame
+    var yScale = d3.scaleLinear()
+        .range([chartInnerHeight, 0])
+        .domain([0, 35]);
+
+    //Example 2.4 line 8...set bars for each province
+    var bars = chart1.selectAll(".bars")
+        .data(csvData)
+        .enter()
+        .append("rect")
+        .sort(function(a, b){
+            return b[expressed]-a[expressed]
+        })
+        .attr("class", function(d){
+            return "bars " + d.NAME;
+        })
+        .attr("width", chartInnerWidth / csvData.length - 1)
+        .attr("x", function(d, i){
+            return i * (chartInnerWidth / csvData.length) + leftPadding;
+        })
+        .attr("height", function(d){
+            return chartInnerHeight - yScale(parseFloat(d[expressed]));
+        })
+        .attr("y", function(d){
+            return yScale(parseFloat(d[expressed])) + topBottomPadding;
+        })
+        .style("fill", function(d){
+            return colorScale(d[expressed]);
+        });
+
+    var chartTitle = chart1.append("text")
+        .attr("x", 60)
+        .attr("y", 40)
+        .attr("id", "chartTitle")
+        .text("Percent of county land used to grow " + expressed + " in 2023");
+    document.getElementById("chartTitle").style.fontSize = `${chartInnerWidth / 420}em`;
+    document.getElementById("chartTitle").style.fontFamily = "sans-serif";
+    document.getElementById("chartTitle").style.fontWeight = "bold";
+
+    //create vertical axis generator
+    var yAxis = d3.axisLeft()
+        .scale(yScale);
+
+    //place axis
+    var axis = chart1.append("g")
+        .attr("class", "axis")
+        .attr("transform", translate)
+        .call(yAxis);
+
+    //create frame for chart border
+    var chartFrame = chart1.append("rect")
+        .attr("class", "chartFrame")
+        .attr("width", chartInnerWidth)
+        .attr("height", chartInnerHeight)
+        .attr("transform", translate);
 };
 
 })();
