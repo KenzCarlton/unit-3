@@ -2,23 +2,10 @@
 
     //pseudo-global variables
     var attrArray = ["alfalfa", "corn", "other hay", "peas", "potatoes", "soybeans", "sweet corn", "winter wheat", "none"];
-    var expressed1 = attrArray[0]; //initial attribute
+    var expressed1 = attrArray[6]; //initial attribute
     var expressed2 = attrArray[8]; //initial attribute
     var max = 0
 
-    //chart frame dimensions
-    var chartWidth = window.innerWidth * 0.555,
-        chartHeight = window.innerHeight * .46,
-        leftPadding = 25,
-        rightPadding = 2,
-        topBottomPadding = 5,
-        chartInnerWidth = chartWidth - leftPadding - rightPadding,
-        chartInnerHeight = chartHeight - topBottomPadding * 2,
-        translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
-
-    var yScale = d3.scaleLinear()
-        .range([0, 0])
-        .domain([0, 0]);
 
     //begin script when window loads
     window.onload = setMap();
@@ -80,8 +67,8 @@ function setMap(){
         setChart(csvData, colorScale, 1, expressed1);
         setChart(csvData, colorScale2, 2, expressed2);
 
-        createDropdown(csvData, 1);
-        createDropdown(csvData, 2);
+        createDropdown(1);
+        createDropdown(2);
 
     };
 }; //end of setMap()
@@ -134,7 +121,7 @@ function setEnumerationUnits(wisconsin, map, path, colorScale){
 
 
         });
-};
+    };
 
 //function to create color scale generator
 function makeColorScale(data){
@@ -194,6 +181,7 @@ function makeColorScale2(data){
 //function to create coordinated bar chart
 function setChart(csvData, color, n, expressed){
 
+
     //create a second svg element to hold the bar chart
     var chart1 = d3.select("body")
         .append("svg")
@@ -222,7 +210,21 @@ function setChart(csvData, color, n, expressed){
         .attr("height", chartInnerHeight)
         .attr("transform", translate);
 
-    calcDomain()
+    //set domain based on max value of arrays used for both bar charts
+    if (max>30){
+        domainTop = Math.ceil(max+1);
+    } else if (max > 10){
+        domainTop = Math.ceil(max / 2)*2;
+    } else if (max > 3.5){
+        domainTop = Math.ceil(max * 2)/2;
+    } else {
+        domainTop = Math.ceil((max)*10)/10;
+    };    
+    
+    //create a scale to size bars proportionally to frame
+    var yScale = d3.scaleLinear()
+        .range([chartInnerHeight, 0])
+        .domain([0, domainTop]);
 
     //Example 2.4 line 8...set bars for each province
     var bars = chart1.selectAll(".bars")
@@ -279,15 +281,12 @@ function setChart(csvData, color, n, expressed){
 };
 
 //function to create a dropdown menu for attribute selection
-function createDropdown(csvData, n){
+function createDropdown(n){
     //add select element
     var dropdown = d3.select("body")
         .append("select")
         .attr("class", "dropdown")
-        .attr("id", `dropdown_${n}`)
-        .on("change", function(){
-            changeAttrSplit(this.value, csvData, n);
-        });
+        .attr("id", `dropdown_${n}`);
 
     var menuText = ""
     if (n == 1) {
@@ -309,97 +308,24 @@ function createDropdown(csvData, n){
         .append("option")
         .attr("value", function(d){ return d })
         .text(function(d){ return d });
-};
 
-
-//dropdown change event handler
-function changeAttrSplit(attribute, csvData, n){
-    if (n == 1){
-        changeAttribute1(attribute, csvData);
+/*    //set menu location (depends on whether this is the 1st or 2nd menu)
+    var menu = document.getElementById(`dropdown_${n}`);
+    var topA = window.innerHeight * .61;
+    var topB = 0;
+    var left = window.innerWidth *9;
+    menu.style.position = 'absolute';
+    menu.style.left = left;
+    if (n == 1) {
+        menu.style.top = topA;
+        console.log("test1")
     } else if (n == 2){
-        changeAttribute2(attribute, csvData);
-    }
-}
+        menu.style.top = topB;
+        menu.style.left = left;
+        console.log("test2")
 
-function changeAttribute1(attribute, csvData) {
-    //change the expressed attribute
-    expressed1 = attribute;
-
-    //recreate the color scale
-    var color1 = makeColorScale(d.properties[expressed1]);
-
-    //recolor enumeration units
-    var regions = d3
-        .selectAll(".regions")
-        .style("fill", function(d){
-            var value = d.properties[expressed1];
-            if (value > max)
-                max = value;    
-            var value2 = d.properties[expressed2];
-            if (value2 > max)
-                max = value2;
-            
-            return color1(d.properties[expressed1]);
-        });
-    //Sort, resize, and recolor bars
-    var bars = chart1.selectAll(".bar")
-        //Sort bars
-        .sort(function(a, b){
-            return b[expressed1] - a[expressed1];
-        });
-
-    updateChartA(1, csvData.length, color1);
-    updateChartB(2, csvData.length, color2);
-}; //end of changeAttribute()
-
-//function to position, size, and color bars in chart
-function updateChartA(n, l, color){
-    //position bars
-    var chart = document.getElementById(`chart_${n}`);
-    var bars = chart.selectAll(".bar");
-
-    calcDomain()
-
-    bars.attr("x", function(d, i){
-            return i * (chartInnerWidth / l) + leftPadding;
-        })
-        //size/resize bars
-        .attr("height", function(d, i){
-            return chartInnerHeight - yScale(parseFloat(d[expressed]));
-        })
-        .attr("y", function(d, i){
-            return yScale(parseFloat(d[expressed])) + topBottomPadding;
-        })
-        //color/recolor bars
-        .style("fill", function(d){            
-            var value = d[expressed];            
-            if(value) {                
-                return color(value);            
-            } else {                
-                return "#ccc";            
-            }    
-    });
-        //at the bottom of updateChart()...add text to chart title
-    var chartTitle = d3.select(".chartTitle")
-        .text("Number of Variable " + expressed[3] + " in each region");
-};
-
-function calcDomain(){
-        //set domain based on max value of arrays used for both bar charts
-        if (max>30){
-            domainTop = Math.ceil(max+1);
-        } else if (max > 10){
-            domainTop = Math.ceil(max / 2)*2;
-        } else if (max > 3.5){
-            domainTop = Math.ceil(max * 2)/2;
-        } else {
-            domainTop = Math.ceil((max)*10)/10;
-        };    
-        
-        //create a scale to size bars proportionally to frame
-        yScale = d3.scaleLinear()
-            .range([chartInnerHeight, 0])
-            .domain([0, domainTop]);
+ 
+    }; */
 };
 
 })();
