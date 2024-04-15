@@ -1,8 +1,12 @@
 (function(){
 
     //pseudo-global variables
-    var attrArray = ["alfalfa", "corn", "other hay", "peas", "potatoes", "soybeans", "sweet corn", "winter wheat"];
-    var expressed = attrArray[1]; //initial attribute
+    var attrArray = ["alfalfa", "corn", "other hay", "peas", "potatoes", "soybeans", "sweet corn", "winter wheat", "null"];
+    var expressed1 = attrArray[7]; //initial attribute
+    var expressed2 = attrArray[8]; //initial attribute
+
+    var max = 0
+
 
     //begin script when window loads
     window.onload = setMap();
@@ -61,8 +65,8 @@ function setMap(){
         setEnumerationUnits(wisconsin, map, path, colorScale);
 
         //add coordinated visualization to the map
-        setChart(csvData, colorScale, colorScale2);
-    //    setChart(csvData, colorScale2, "2");
+        setChart(csvData, colorScale, 1, expressed1);
+        setChart(csvData, colorScale2, 2, expressed2);
 
     };
 }; //end of setMap()
@@ -104,7 +108,16 @@ function setEnumerationUnits(wisconsin, map, path, colorScale){
         })
         .attr("d", path)
         .style("fill", function(d){
-            return colorScale(d.properties[expressed]);
+            var value = d.properties[expressed1];
+            if (value > max)
+                max = value;    
+            var value2 = d.properties[expressed2];
+            if (value2 > max)
+                max = value2;
+            
+            return colorScale(d.properties[expressed1]);
+
+
         });
     };
 
@@ -126,7 +139,7 @@ function makeColorScale(data){
     //build array of all values of the expressed attribute
     var domainArray = [];
     for (var i=0; i<data.length; i++){
-        var val = parseFloat(data[i][expressed]);
+        var val = parseFloat(data[i][expressed1]);
         domainArray.push(val);
     };
 
@@ -153,7 +166,7 @@ function makeColorScale2(data){
     //build array of all values of the expressed attribute
     var domainArray = [];
     for (var i=0; i<data.length; i++){
-        var val = parseFloat(data[i][expressed]);
+        var val = parseFloat(data[i][expressed2]);
         domainArray.push(val);
     };
 
@@ -164,7 +177,7 @@ function makeColorScale2(data){
 };
 
 //function to create coordinated bar chart
-function setChart(csvData, colorScale, colorScale2){
+function setChart(csvData, color, n, expressed){
     //chart frame dimensions
     var chartWidth = window.innerWidth * 0.555,
         chartHeight = window.innerHeight * .4,
@@ -174,34 +187,34 @@ function setChart(csvData, colorScale, colorScale2){
         chartInnerWidth = chartWidth - leftPadding - rightPadding,
         chartInnerHeight = chartHeight - topBottomPadding * 2,
         translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
-    console.log(chartWidth);
-
 
     //create a second svg element to hold the bar chart
     var chart1 = d3.select("body")
         .append("svg")
         .attr("width", chartWidth)
         .attr("height", chartHeight)
-        .attr("id", "chart_1");
+        .attr("id", `chart_${n}`);
     
-    //create a second svg element to hold the bar chart
-    var chart2 = d3.select("body")
-        .append("svg")
-        .attr("width", chartWidth)
-        .attr("height", chartHeight)
-        .attr("id", "chart_2");
+    const box = document.getElementById(`chart_${n}`);
 
-    const box1 = document.getElementById('chart_1');
-    const box2 = document.getElementById('chart_2');
-    var top1 = 0
-    var top2 = window.innerHeight * .5
-    var left = window.innerWidth * .425
-    box1.style.position = 'absolute';
-    box2.style.position = 'absolute';
-    box1.style.top = top1;
-    box2.style.top = top2;
-    box1.style.left = left;
-    box2.style.left = left;
+        
+    var top2 = window.innerHeight * .5;
+    var top1 = 0;
+    var left = window.innerWidth * .425;
+    box.style.position = 'absolute';
+
+    if (n == 1) {
+        box.style.top = top1;
+        box.style.left = left;
+        console.log("1")
+    } else if (n == 2){
+        box.style.top = top2;
+        box.style.left = left;
+        console.log("2");
+
+    };
+
+
 
     //create a rectangle for chart background fill
     var chartBackground = chart1.append("rect")
@@ -210,10 +223,12 @@ function setChart(csvData, colorScale, colorScale2){
         .attr("height", chartInnerHeight)
         .attr("transform", translate);
 
+    domainTop = max + .1;
+    
     //create a scale to size bars proportionally to frame
     var yScale = d3.scaleLinear()
         .range([chartInnerHeight, 0])
-        .domain([0, 35]);
+        .domain([0, domainTop]);
 
     //Example 2.4 line 8...set bars for each province
     var bars = chart1.selectAll(".bars")
@@ -237,17 +252,19 @@ function setChart(csvData, colorScale, colorScale2){
             return yScale(parseFloat(d[expressed])) + topBottomPadding;
         })
         .style("fill", function(d){
-            return colorScale(d[expressed]);
+            return color(d[expressed]);
         });
 
-    var chartTitle = chart1.append("text")
-        .attr("x", 60)
-        .attr("y", 40)
-        .attr("id", "chartTitle")
-        .text("Percent of county land used to grow " + expressed + " in 2023");
-    document.getElementById("chartTitle").style.fontSize = `${chartInnerWidth / 420}em`;
-    document.getElementById("chartTitle").style.fontFamily = "sans-serif";
-    document.getElementById("chartTitle").style.fontWeight = "bold";
+    if (expressed !== "null"){
+        var chartTitle = chart1.append("text")
+            .attr("x", 60)
+            .attr("y", 40)
+            .attr("id", `chartTitle_${n}`)
+            .text("Percent of county land used to grow " + expressed + " in 2023");    
+        document.getElementById(`chartTitle_${n}`).style.fontSize = `${chartInnerWidth / 500}em`;
+        document.getElementById(`chartTitle_${n}`).style.fontFamily = "sans-serif";
+        document.getElementById(`chartTitle_${n}`).style.fontWeight = "bold";
+    };
 
     //create vertical axis generator
     var yAxis = d3.axisLeft()
