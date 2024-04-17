@@ -14,7 +14,9 @@
         topBottomPadding = 5,
         chartInnerWidth = chartWidth - leftPadding - rightPadding,
         chartInnerHeight = chartHeight - topBottomPadding * 2,
-        translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
+        translate = "translate(" + leftPadding + "," + topBottomPadding + ")"
+        chart1 = ""
+        chart2 = "";
 
     var yScale = d3.scaleLinear()
         .range([0, 0])
@@ -195,11 +197,22 @@ function makeColorScale2(data){
 function setChart(csvData, color, n, expressed){
 
     //create a second svg element to hold the bar chart
-    var chart1 = d3.select("body")
-        .append("svg")
-        .attr("width", chartWidth)
-        .attr("height", chartHeight)
-        .attr("id", `chart_${n}`);
+    if (n == 1){
+        chart1 = d3.select("body")
+            .append("svg")
+            .attr("width", chartWidth)
+            .attr("height", chartHeight)
+            .attr("id", `chart_${n}`);
+        var chart = chart1
+    } else if (n == 2){
+        chart2 = d3.select("body")
+            .append("svg")
+            .attr("width", chartWidth)
+            .attr("height", chartHeight)
+            .attr("id", `chart_${n}`);
+        var chart = chart2
+    };
+
     
     //set chart location (depends on whether this is the 1st or 2nd chart)
     const box = document.getElementById(`chart_${n}`);
@@ -216,7 +229,7 @@ function setChart(csvData, color, n, expressed){
     };
 
     //create a rectangle for chart background fill
-    var chartBackground = chart1.append("rect")
+    var chartBackground = chart.append("rect")
         .attr("class", "chartBackground")
         .attr("width", chartInnerWidth)
         .attr("height", chartInnerHeight)
@@ -225,7 +238,7 @@ function setChart(csvData, color, n, expressed){
     calcDomain()
 
     //Example 2.4 line 8...set bars for each province
-    var bars = chart1.selectAll(".bars")
+    var bars = chart.selectAll(".bars")
         .data(csvData)
         .enter()
         .append("rect")
@@ -251,27 +264,31 @@ function setChart(csvData, color, n, expressed){
 
     //create chart title with text sized based on screen size
     if (expressed !== "none"){
-        var chartTitle = chart1.append("text")
-            .attr("x", 60)
-            .attr("y", 40)
-            .attr("id", `chartTitle_${n}`)
-            .attr("class", "chartTitle")
-            .text("Percent of county land used to grow " + expressed + " in 2023");    
-        document.getElementById(`chartTitle_${n}`).style.fontSize = `${chartInnerWidth / 500}em`;
+        var t = "Percent of county land used to grow " + expressed + " in 2023";
+    } else {
+        var t = "No Value Selected";    
     };
+    var chartTitle = chart.append("text")
+        .attr("x", 60)
+        .attr("y", 40)
+        .attr("id", `chartTitle_${n}`)
+        .attr("class", "chartTitle")
+        .text(t);    
+    document.getElementById(`chartTitle_${n}`).style.fontSize = `${chartInnerWidth / 500}em`;
 
     //create vertical axis generator
     var yAxis = d3.axisLeft()
         .scale(yScale);
 
     //place axis
-    var axis = chart1.append("g")
+    var axis = chart.append("g")
         .attr("class", "axis")
+        .attr("id", `axis_${n}`)
         .attr("transform", translate)
         .call(yAxis);
 
     //create frame for chart border
-    var chartFrame = chart1.append("rect")
+    var chartFrame = chart.append("rect")
         .attr("class", "chartFrame")
         .attr("width", chartInnerWidth)
         .attr("height", chartInnerHeight)
@@ -286,7 +303,7 @@ function createDropdown(csvData, n){
         .attr("class", "dropdown")
         .attr("id", `dropdown_${n}`)
         .on("change", function(){
-            changeAttrSplit(this.value, csvData, n);
+            changeAttribute(this.value, csvData, n);
         });
 
     var menuText = ""
@@ -303,34 +320,37 @@ function createDropdown(csvData, n){
         .text(menuText);
 
     //add attribute name options
+    if (n == 1){
+        var options = ["alfalfa", "corn", "other hay", "peas", "potatoes", "soybeans", "sweet corn", "winter wheat"];
+    } else if (n == 2){
+        var options = attrArray;
+    };
     var attrOptions = dropdown.selectAll("attrOptions")
-        .data(attrArray)
+        .data(options)
         .enter()
         .append("option")
         .attr("value", function(d){ return d })
         .text(function(d){ return d });
 };
 
-
-//dropdown change event handler
-function changeAttrSplit(attribute, csvData, n){
-    if (n == 1){
-        changeAttribute1(attribute, csvData);
-    } else if (n == 2){
-        changeAttribute2(attribute, csvData);
-    }
-}
-
-function changeAttribute1(attribute, csvData) {
+function changeAttribute(attribute, csvData, n) {
     //change the expressed attribute
-    expressed1 = attribute;
+    if (n == 1){
+        expressed1 = attribute;
+
+    } else if (n == 2){
+        expressed2 = attribute;
+    }
+
+    max =0
 
     //recreate the color scale
-    var color1 = makeColorScale(d.properties[expressed1]);
+    var color1 = makeColorScale(csvData);
+    var color2 = makeColorScale2(csvData);
 
     //recolor enumeration units
-    var regions = d3
-        .selectAll(".regions")
+    var counties = d3
+        .selectAll(".counties")
         .style("fill", function(d){
             var value = d.properties[expressed1];
             if (value > max)
@@ -341,24 +361,25 @@ function changeAttribute1(attribute, csvData) {
             
             return color1(d.properties[expressed1]);
         });
-    //Sort, resize, and recolor bars
-    var bars = chart1.selectAll(".bar")
-        //Sort bars
-        .sort(function(a, b){
-            return b[expressed1] - a[expressed1];
-        });
 
-    updateChartA(1, csvData.length, color1);
-    updateChartB(2, csvData.length, color2);
+    calcDomain();
+
+    updateChart(1, csvData.length, color1, expressed1);
+    updateChart(2, csvData.length, color2, expressed2);
 }; //end of changeAttribute()
 
 //function to position, size, and color bars in chart
-function updateChartA(n, l, color){
+function updateChart(n, l, color, expressed){
     //position bars
-    var chart = document.getElementById(`chart_${n}`);
-    var bars = chart.selectAll(".bar");
-
-    calcDomain()
+    if (n == 1){
+        var chart = chart1
+    } else if (n == 2){
+        var chart = chart2
+    };
+    var bars = chart.selectAll(".bars")
+            .sort(function(a, b){
+            return b[expressed] - a[expressed];
+        });
 
     bars.attr("x", function(d, i){
             return i * (chartInnerWidth / l) + leftPadding;
@@ -380,8 +401,19 @@ function updateChartA(n, l, color){
             }    
     });
         //at the bottom of updateChart()...add text to chart title
-    var chartTitle = d3.select(".chartTitle")
-        .text("Number of Variable " + expressed[3] + " in each region");
+        if (expressed !== "none"){
+            var t = "Percent of county land used to grow " + expressed + " in 2023";
+        } else {
+            var t = "No Value Selected";    
+        };
+    var chartTitle = d3.select(`#chartTitle_${n}`)
+        .text(t); 
+
+    var yAxis = d3.axisLeft()
+        .scale(yScale);
+    var axis = d3.select(`#axis_${n}`)
+        .call(yAxis);
+        
 };
 
 function calcDomain(){
