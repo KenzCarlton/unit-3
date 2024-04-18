@@ -123,8 +123,11 @@ function setEnumerationUnits(franceRegions, map, path, colorScale){
         .attr("d", path)
         .style("fill", function(d){
             return colorScale(d.properties[expressed]);
+        })
+        .on("mouseover", function(event, d){
+            highlight(d.properties);
         });
-};
+    };
 
 //function to create color scale generator
 function makeColorScale(data){
@@ -198,6 +201,10 @@ function setChart(csvData, colorScale){
         })
         .style("fill", function(d){
             return colorScale(d[expressed]);
+        })
+        .attr("width", chartInnerWidth / csvData.length - 1)
+        .on("mouseover", function(event, d){
+            highlight(d);
         });
 
     //create a text element for the chart title
@@ -260,9 +267,10 @@ function changeAttribute(attribute, csvData) {
     var colorScale = makeColorScale(csvData);
 
     //recolor enumeration units
-    var regions = d3
-        .selectAll(".regions")
-        .style("fill", function (d) {
+    var regions = d3.selectAll(".regions")
+            .transition()
+            .duration(2000)
+            .style("fill", function (d) {
             var value = d.properties[expressed];
             if (value) {
                 return colorScale(d.properties[expressed]);
@@ -275,7 +283,13 @@ function changeAttribute(attribute, csvData) {
         //Sort bars
         .sort(function(a, b){
             return b[expressed] - a[expressed];
-        });
+        })
+        .transition() //add animation
+        .delay(function(d, i){
+            return i * 5
+        })
+        .duration(100);
+
 
     updateChart(bars, csvData.length, colorScale);
 }; //end of changeAttribute()
@@ -305,6 +319,14 @@ function updateChart(bars, n, colorScale){
         //at the bottom of updateChart()...add text to chart title
     var chartTitle = d3.select(".chartTitle")
         .text("Number of Variable " + expressed[3] + " in each region");
+};
+
+//function to highlight enumeration units and bars
+function highlight(props){
+    //change stroke
+    var selected = d3.selectAll("." + props.adm1_code)
+        .style("stroke", "blue")
+        .style("stroke-width", "2");
 };
 
 })();

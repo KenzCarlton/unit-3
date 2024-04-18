@@ -1,7 +1,7 @@
 (function(){
 
     //pseudo-global variables
-    var attrArray = ["alfalfa", "corn", "other hay", "peas", "potatoes", "soybeans", "sweet corn", "winter wheat", "none"];
+    var attrArray = ["alfalfa", "corn", "otherHay", "peas", "potatoes", "soybeans", "sweetCorn", "winterWheat", "none"];
     var expressed1 = attrArray[0]; //initial attribute
     var expressed2 = attrArray[8]; //initial attribute
     var max = 0
@@ -133,10 +133,11 @@ function setEnumerationUnits(wisconsin, map, path, colorScale){
                 max = value2;
             
             return colorScale(d.properties[expressed1]);
-
-
+        })
+        .on("mouseover", function(event, d){
+            highlight(d.properties);
         });
-};
+    };
 
 //function to create color scale generator
 function makeColorScale(data){
@@ -260,11 +261,15 @@ function setChart(csvData, color, n, expressed){
         })
         .style("fill", function(d){
             return color(d[expressed]);
+        })
+        .attr("width", chartInnerWidth / csvData.length - 1)
+        .on("mouseover", function(event, d){
+            highlight(d);
         });
 
     //create chart title with text sized based on screen size
     if (expressed !== "none"){
-        var t = "Percent of county land used to grow " + expressed + " in 2023";
+        var t = "Percent of county land used to grow " + expressed + " in 2022";
     } else {
         var t = "No Value Selected";    
     };
@@ -349,8 +354,9 @@ function changeAttribute(attribute, csvData, n) {
     var color2 = makeColorScale2(csvData);
 
     //recolor enumeration units
-    var counties = d3
-        .selectAll(".counties")
+    var counties = d3.selectAll(".counties")
+        .transition()
+        .duration(1000)
         .style("fill", function(d){
             var value = d.properties[expressed1];
             if (value > max)
@@ -379,7 +385,12 @@ function updateChart(n, l, color, expressed){
     var bars = chart.selectAll(".bars")
             .sort(function(a, b){
             return b[expressed] - a[expressed];
-        });
+        })
+        .transition() //add animation
+        .delay(function(d, i){
+            return i * 20
+        })
+        .duration(500);
 
     bars.attr("x", function(d, i){
             return i * (chartInnerWidth / l) + leftPadding;
@@ -402,7 +413,7 @@ function updateChart(n, l, color, expressed){
     });
         //at the bottom of updateChart()...add text to chart title
         if (expressed !== "none"){
-            var t = "Percent of county land used to grow " + expressed + " in 2023";
+            var t = "Percent of county land used to grow " + expressed + " in 2022";
         } else {
             var t = "No Value Selected";    
         };
@@ -413,7 +424,6 @@ function updateChart(n, l, color, expressed){
         .scale(yScale);
     var axis = d3.select(`#axis_${n}`)
         .call(yAxis);
-        
 };
 
 function calcDomain(){
@@ -432,6 +442,14 @@ function calcDomain(){
         yScale = d3.scaleLinear()
             .range([chartInnerHeight, 0])
             .domain([0, domainTop]);
+};
+
+//function to highlight enumeration units and bars
+function highlight(props){
+    //change stroke
+    var selected = d3.selectAll("." + props.NAME)
+        .style("stroke", "yellow")
+        .style("stroke-width", "2");
 };
 
 })();
