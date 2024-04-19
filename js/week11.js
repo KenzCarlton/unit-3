@@ -122,12 +122,19 @@ function setEnumerationUnits(franceRegions, map, path, colorScale){
         })
         .attr("d", path)
         .style("fill", function(d){
-            return colorScale(d.properties[expressed]);
+            return colorScale(d.properties[expressed])
         })
         .on("mouseover", function(event, d){
-            highlight(d.properties);
-        });
-    };
+            highlight(d.properties)
+        })
+        .on("mouseout", function(event, d){
+            dehighlight(d.properties);
+        });    
+
+    var desc = regions.append("desc")
+        .text('{"stroke": "#000", "stroke-width": "0.5px"}');
+
+};
 
 //function to create color scale generator
 function makeColorScale(data){
@@ -204,9 +211,15 @@ function setChart(csvData, colorScale){
         })
         .attr("width", chartInnerWidth / csvData.length - 1)
         .on("mouseover", function(event, d){
-            highlight(d);
+            highlight(d)
+        })
+        .on("mouseout", function(event, d){
+            dehighlight(d);
         });
-
+        
+    var desc = bars.append("desc")
+        .text('{"stroke": "none", "stroke-width": "0px"}');
+        
     //create a text element for the chart title
     var chartTitle = chart.append("text")
         .attr("x", 40)
@@ -327,6 +340,48 @@ function highlight(props){
     var selected = d3.selectAll("." + props.adm1_code)
         .style("stroke", "blue")
         .style("stroke-width", "2");
+    setLabel(props);
+};
+
+//function to reset the element style on mouseout
+function dehighlight(props){
+    var selected = d3.selectAll("." + props.adm1_code)
+        .style("stroke", function(){
+            return getStyle(this, "stroke")
+        })
+        .style("stroke-width", function(){
+            return getStyle(this, "stroke-width")
+        });
+
+    function getStyle(element, styleName){
+        var styleText = d3.select(element)
+            .select("desc")
+            .text();
+
+        var styleObject = JSON.parse(styleText);
+
+        return styleObject[styleName];
+    };
+    d3.select(".infolabel")
+        .remove();
+};
+
+//function to create dynamic label
+function setLabel(props){
+    //label content
+    var labelAttribute = "<h1>" + props[expressed] +
+        "</h1><b>" + expressed + "</b>";
+
+    //create info label div
+    var infolabel = d3.select("body")
+        .append("div")
+        .attr("class", "infolabel")
+        .attr("id", props.adm1_code + "_label")
+        .html(labelAttribute);
+
+    var regionName = infolabel.append("div")
+        .attr("class", "labelname")
+        .html(props.name);
 };
 
 })();

@@ -16,7 +16,9 @@
         chartInnerHeight = chartHeight - topBottomPadding * 2,
         translate = "translate(" + leftPadding + "," + topBottomPadding + ")"
         chart1 = ""
-        chart2 = "";
+        chart2 = ""
+        value1 = ""
+        value2 = "";
 
     var yScale = d3.scaleLinear()
         .range([0, 0])
@@ -123,6 +125,9 @@ function setEnumerationUnits(wisconsin, map, path, colorScale){
         .attr("class", function(d){
             return "counties " + d.properties.NAME;
         })
+        .attr("id", function(d){
+            return "counties " + d.properties.NAME;
+        })
         .attr("d", path)
         .style("fill", function(d){
             var value = d.properties[expressed1];
@@ -136,8 +141,14 @@ function setEnumerationUnits(wisconsin, map, path, colorScale){
         })
         .on("mouseover", function(event, d){
             highlight(d.properties);
-        });
-    };
+        })
+        .on("mouseout", function(event, d){
+            dehighlight(d.properties);
+        });    
+
+    var desc = counties.append("desc")
+        .text('{"stroke": "#CCC", "stroke-width": "2px"}');
+};
 
 //function to create color scale generator
 function makeColorScale(data){
@@ -265,7 +276,13 @@ function setChart(csvData, color, n, expressed){
         .attr("width", chartInnerWidth / csvData.length - 1)
         .on("mouseover", function(event, d){
             highlight(d);
+        })
+        .on("mouseout", function(event, d){
+            dehighlight(d);
         });
+        
+    var desc = bars.append("desc")
+        .text('{"stroke": "none", "stroke-width": "0px"}');
 
     //create chart title with text sized based on screen size
     if (expressed !== "none"){
@@ -273,6 +290,7 @@ function setChart(csvData, color, n, expressed){
     } else {
         var t = "No Value Selected";    
     };
+
     var chartTitle = chart.append("text")
         .attr("x", 60)
         .attr("y", 40)
@@ -451,6 +469,95 @@ function highlight(props){
         .style("stroke", "yellow")
         .style("stroke-width", "2")
         .raise();
+    var select = d3.selectAll(".chartFrame").raise();
+
+    setLabel(props);
 };
 
+//function to reset the element style on mouseout
+function dehighlight(props){
+    var selected = d3.selectAll("." + props.NAME)
+        .style("stroke", function(){
+            return getStyle(this, "stroke")
+        })
+        .style("stroke-width", function(){
+            return getStyle(this, "stroke-width")
+        });
+
+    function getStyle(element, styleName){
+        var styleText = d3.select(element)
+            .select("desc")
+            .text();
+
+        var styleObject = JSON.parse(styleText);
+
+        return styleObject[styleName];
+    };
+    d3.select(".infolabel")
+        .remove();
+};
+
+//function to create dynamic label
+function setLabel(props){
+    //label content
+
+    labelValues(props, 1);
+    labelValues(props, 2)
+    var mainCrop = "<b>" + expressed1 + ": </b><h1>" + value1 + "</h1>";
+    var compareCrop = "<b>" + expressed2 + ": </b><h1>" + value2 + "</h1>";
+
+    //create info label div
+    var infolabel = d3.select("body")
+        .append("div")
+        .attr("class", "infolabel")
+        .attr("id", props.NAME + "_label");
+
+    var regionName = infolabel.append("div")
+        .attr("class", "labelname")
+        .html(props.NAME + " County");
+
+    var crop1 = infolabel.append("div")
+        .attr("class", "crop1")
+        .html(mainCrop);
+
+    if (expressed2 !== "none"){
+        var crop2 = infolabel.append("div")
+            .attr("class", "crop2")
+            .html(compareCrop);
+    };    
+};
+
+function labelValues(props, n){
+
+    if (n == 1){
+        expressed = expressed1;
+    } else if (n == 2){
+        expressed = expressed2;
+    };
+    
+    var value = 0
+
+    if (props[expressed] >= 1) {
+        value = Math.round(100 * props[expressed])/100;
+    } else if (props[expressed] >= .1) {
+        value = Math.round(1000 * props[expressed])/1000;
+    } else if (props[expressed] >= .01) {
+        value = Math.round(10000 * props[expressed])/10000;
+    } else if (props[expressed] >= .001) {
+        value = Math.round(100000 * props[expressed])/100000;
+    } else if (props[expressed] >= .0001) {
+        value = Math.round(1000000 * props[expressed])/1000000;
+    } else if (props[expressed] > 0) {
+        value = "<.0001";
+    } else {
+        value = props[expressed];
+    };
+
+    if (n == 1){
+        value1 = value;
+    } else if (n == 2){
+        value2 = value;
+    };
+}
+    
 })();
