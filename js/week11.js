@@ -129,7 +129,8 @@ function setEnumerationUnits(franceRegions, map, path, colorScale){
         })
         .on("mouseout", function(event, d){
             dehighlight(d.properties);
-        });    
+        })
+        .on("mousemove", moveLabel);
 
     var desc = regions.append("desc")
         .text('{"stroke": "#000", "stroke-width": "0.5px"}');
@@ -215,7 +216,8 @@ function setChart(csvData, colorScale){
         })
         .on("mouseout", function(event, d){
             dehighlight(d);
-        });
+        })
+        .on("mousemove", moveLabel);
         
     var desc = bars.append("desc")
         .text('{"stroke": "none", "stroke-width": "0px"}');
@@ -382,6 +384,30 @@ function setLabel(props){
     var regionName = infolabel.append("div")
         .attr("class", "labelname")
         .html(props.name);
+};
+
+//function to move info label with mouse
+function moveLabel(){
+    //get width of label
+    var labelWidth = d3.select(".infolabel")
+        .node()
+        .getBoundingClientRect()
+        .width;
+
+    //use coordinates of mousemove event to set label coordinates
+    var x1 = event.clientX + 10,
+        y1 = event.clientY - 75,
+        x2 = event.clientX - labelWidth - 10,
+        y2 = event.clientY + 25;
+
+    //horizontal label coordinate, testing for overflow
+    var x = event.clientX > window.innerWidth - labelWidth - 20 ? x2 : x1; 
+    //vertical label coordinate, testing for overflow
+    var y = event.clientY < 75 ? y2 : y1; 
+
+    d3.select(".infolabel")
+        .style("left", x + "px")
+        .style("top", y + "px");
 };
 
 })();

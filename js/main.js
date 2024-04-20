@@ -1,10 +1,15 @@
 (function(){
-
+    document.title = "Wisconsin Crops";
     //pseudo-global variables
-    var attrArray = ["alfalfa", "corn", "otherHay", "peas", "potatoes", "soybeans", "sweetCorn", "winterWheat", "none"];
-    var expressed1 = attrArray[0]; //initial attribute
-    var expressed2 = attrArray[8]; //initial attribute
-    var max = 0
+    var attrArray = ["alfalfa", "corn", "other hay", "peas", "potatoes", "soybeans", "sweet corn", "winter wheat", "none"];
+    var expressed1 = attrArray[0]; //initial attribute;
+    var expressed2 = attrArray[8]; //initial attribute;
+    var max = 0;
+    var chart1 = "";
+    var chart2 = "";
+    var value1 = "";
+    var value2 = "";
+    var titleScreen = "";
 
     //chart frame dimensions
     var chartWidth = window.innerWidth * 0.555,
@@ -14,11 +19,7 @@
         topBottomPadding = 5,
         chartInnerWidth = chartWidth - leftPadding - rightPadding,
         chartInnerHeight = chartHeight - topBottomPadding * 2,
-        translate = "translate(" + leftPadding + "," + topBottomPadding + ")"
-        chart1 = ""
-        chart2 = ""
-        value1 = ""
-        value2 = "";
+        translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
 
     var yScale = d3.scaleLinear()
         .range([0, 0])
@@ -32,7 +33,7 @@ function setMap(){
 
     //map frame dimensions
     var width = window.innerWidth * 0.3875,
-        height = width;
+        height = width * 1.04;
 
     //create new svg container for the map
     var map = d3.select("body")
@@ -43,7 +44,7 @@ function setMap(){
 
     //create equal area conic projection centered on WI
     var projection = d3.geoAzimuthalEquidistant()
-        .center([0, 44.7])
+        .center([0, 44.9])
         .rotate([89.9, 0, 0])
         .scale(width * 11.3)
         .translate([width / 2, height / 2]);
@@ -87,6 +88,7 @@ function setMap(){
         createDropdown(csvData, 1);
         createDropdown(csvData, 2);
 
+        title();
     };
 }; //end of setMap()
 
@@ -144,7 +146,8 @@ function setEnumerationUnits(wisconsin, map, path, colorScale){
         })
         .on("mouseout", function(event, d){
             dehighlight(d.properties);
-        });    
+        })
+        .on("mousemove", moveLabel);
 
     var desc = counties.append("desc")
         .text('{"stroke": "#CCC", "stroke-width": "2px"}');
@@ -279,7 +282,9 @@ function setChart(csvData, color, n, expressed){
         })
         .on("mouseout", function(event, d){
             dehighlight(d);
-        });
+        })
+        .on("mousemove", moveLabel);
+
         
     var desc = bars.append("desc")
         .text('{"stroke": "none", "stroke-width": "0px"}');
@@ -288,7 +293,7 @@ function setChart(csvData, color, n, expressed){
     if (expressed !== "none"){
         var t = "Percent of county land used to grow " + expressed + " in 2022";
     } else {
-        var t = "No Value Selected";    
+        var t = "Select a value to enable comparison";    
     };
 
     var chartTitle = chart.append("text")
@@ -331,7 +336,7 @@ function createDropdown(csvData, n){
 
     var menuText = ""
     if (n == 1) {
-        menuText = "Select Main Attribute";
+        menuText = "Select Main Crop";
     } else if (n == 2){
         menuText = "Select Comparison";
     };
@@ -503,8 +508,9 @@ function setLabel(props){
 
     labelValues(props, 1);
     labelValues(props, 2)
-    var mainCrop = "<b>" + expressed1 + ": </b><h1>" + value1 + "</h1>";
-    var compareCrop = "<b>" + expressed2 + ": </b><h1>" + value2 + "</h1>";
+
+    var mainCrop = "<b>" + expressed1 + ": </b><h2>" + value1 + "%</h2>";
+    var compareCrop = "<b>" + expressed2 + ": </b><h2>" + value2 + "%</h2>";
 
     //create info label div
     var infolabel = d3.select("body")
@@ -520,7 +526,7 @@ function setLabel(props){
         .attr("class", "crop1")
         .html(mainCrop);
 
-    if (expressed2 !== "none"){
+    if (expressed2 !== "none" && expressed2 !== expressed1){
         var crop2 = infolabel.append("div")
             .attr("class", "crop2")
             .html(compareCrop);
@@ -559,5 +565,76 @@ function labelValues(props, n){
         value2 = value;
     };
 }
+
+//function to move info label with mouse
+function moveLabel(){
+    //get width of label
+    var labelWidth = d3.select(".infolabel")
+        .node()
+        .getBoundingClientRect()
+        .width;
+
+    //use coordinates of mousemove event to set label coordinates
+    var x1 = event.clientX + 10,
+        y1 = event.clientY - 85,
+        x2 = event.clientX - labelWidth - 10,
+        y2 = event.clientY + 25;
+
+    //horizontal label coordinate, testing for overflow
+    var x = event.clientX > window.innerWidth - labelWidth - 20 ? x2 : x1; 
+    //vertical label coordinate, testing for overflow
+    var y = event.clientY < 75 ? y2 : y1; 
+
+    d3.select(".infolabel")
+        .style("left", x + "px")
+        .style("top", y + "px");
+};
+
+//add title
+function title(){
+    titleScreen = d3.select("body")
+        .append("svg")
+        .attr("width", window.innerWidth)
+        .attr("height", window.innerHeight)
+        .attr("id", "titleScreen")
+        .on("click", function(event, d){
+            const element = document.getElementById("titleScreen");
+            element.remove();
+        })
+    var titleBackground = titleScreen.append("rect")
+        .attr("id", "titleBackground")
+        .attr("width", window.innerWidth)
+        .attr("height", window.innerHeight);
+    var titleText = titleScreen.append("text")
+        .attr("x", window.innerWidth/5)
+        .attr("y",  window.innerHeight/5)
+        .attr("id", "titleText")
+        .text("County Crops of Wisconsin in 2022");
+    addText('Choose an option from "Select Main Crop"', 1);
+    addText('to display the relative percentage amounts', 2);
+    addText("of land used to grow that crop per county", 3);
+    addText("in the map and top chart.", 4);
+    addText("", 5);
+    addText('Choose an option from "Select Comparison"', 6);
+    addText("to show its values in the bottom chart.", 7);
+    addText("", 8);
+    addText("Darker color values indicate higher percentages.", 9);
+    addText("", 10);
+    addText("Hover over a county on the map or a bar on", 11);
+    addText("either chart to display exact percentages", 12);
+    addText("of land dedicated to the selected crops", 13);
+    addText("for that county.", 14);
+    addText("", 15);
+    addText("CLICK ANYWHERE TO BEGIN", 16);
+
+
+    };
+function addText(text2add, n){
+    var text = titleScreen.append("text")
+        .attr("x", window.innerWidth/5)
+        .attr("y",  window.innerHeight/4.25 + 20 * n)
+        .attr("class", "introText")
+        .text(text2add);    
+    }
     
 })();
